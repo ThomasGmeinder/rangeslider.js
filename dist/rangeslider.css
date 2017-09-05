@@ -32,7 +32,11 @@
 }
 
 .rangeslider__fill {
-  background: #00ff00;
+  background: #0000ff;
+  position: absolute;
+}
+.rangeslider__fill__red {
+  background: #DA1818;
   position: absolute;
 }
 .rangeslider--horizontal .rangeslider__fill {
