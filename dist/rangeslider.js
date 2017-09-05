@@ -34,6 +34,10 @@
     var pluginName = 'rangeslider',
         pluginIdentifier = 0,
         hasInputRangeSupport = supportsRange(),
+        // Status variables to control slider state over time based on state changing on he server
+        slider_index,
+        timeout="inactive",
+        timout_counter=0,
         defaults = {
             polyfill: true,
             orientation: 'horizontal',
