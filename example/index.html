@@ -97,7 +97,6 @@
         }
 
         function monitor_remote_motors(slider) {
-            var motor_position_matches_slider = 0;
             var mv = parseInt(slider.motor_value);
             var current_mp;
             var target_mp = slider.value;
@@ -121,8 +120,6 @@
                     alert('Exception:'+exception);
                 }
             }).done(function() {
-                //override just for testing
-                //current_mp = 50;
                 if(isNaN(current_mp)) 
                 {
                     // Todo: Mark slider red  
@@ -141,20 +138,23 @@
                 else if(current_mp == target_mp) 
                 {
                     slider.$element[0].disabled = 0; // re-enable
-                    // update current_mp. Could have been changed by with manual control at the server
+                    // update current_mp. Could have been changed by the server
                     slider.setValue(current_mp);  
                     valueOutput(slider.$element[0]);
                     slider.timeout = "inactive";
                 } 
                 else 
                 {
-                    slider.$element[0].disabled = 1; // disable
+                    slider.$element[0].disabled = 1; // disable slider
                     var message;
+                    // Todo: Improve this condition. Change message to "Server änderte position" 
+                    // if server overrides the position set in the Browser when someone uses buttons at the 
+                    // same time. HW buttons have higher prio than Browser.
                     if(isNaN(timeout)) {
                         // timeout is inactive. That means motor is controlled remotely
-                        message = "Motor läuft.... Server kontrolliert"
+                        message = "Server änderte position. Motor läuft...."
                     } else {
-                        message = "Motor läuft.... Browser kontrolliert"
+                        message = "Client änderte position. Motor läuft...."
                     }
                     stringOutput(slider.$element[0], message);
                 }
@@ -251,7 +251,7 @@
                 this.timeout_counter = 0;
                 this.$element[0].disabled = 1; // disable
                 this.update(true, false);
-                stringOutput(this.$element[0], "Motor läuft.... Browser kontrolliert");
+                stringOutput(this.$element[0], "Client änderte position. Motor läuft....");
                 console.log('onSlideEnd');
                 console.log('position: ' + position, 'value: ' + value);
             }
