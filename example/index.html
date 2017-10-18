@@ -61,13 +61,13 @@
 
     <div id="js-example-change-value">
         <h2>Seitenlüftung 1</h2>
-        <input type="range" min="0" max="100" motor_index="0" data-rangeslider>
+        <input type="range" min="0" max="100" slider_index="0" data-rangeslider>
         <output></output>
     </div>
 
     <div id="js-example-change-value">
         <h2>Seitenlüftung 2</h2>
-        <input type="range" min="0" max="100" motor_index="1" data-rangeslider>
+        <input type="range" min="0" max="100" slider_index="1" data-rangeslider>
         <output></output>
     </div>
 
@@ -103,13 +103,13 @@
             var delay = 2000; // 2s
             var timeout = slider.timeout;
             var tc = slider.timeout_counter;
-
-            console.log('monitor_remote_motors called with timeout counter '+tc);
+            
+            console.log('monitor_remote_motors called with timeout counter '+tc+' for slider '+slider.slider_index);
             $.ajax({
                 type: 'POST',
                 url:  'motor_position.php',
                 dataType: "json",
-                data: ({target_mp : target_mp, timeout_counter : tc}),
+                data: ({target_mp : target_mp, motor_index : slider.slider_index, timeout_counter : tc}),
                 success: function(data) {
                     current_mp = parseInt(data.current_mp);
                     target_mp = parseInt(data.target_mp); // It's possible that this was changed in the greenhouse with the buttons

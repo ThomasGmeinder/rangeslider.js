@@ -16,8 +16,10 @@ $current_mp = -10; // current motor position
 
 if(isset($_POST['target_mp'])) {
   $target_mp = $_POST['target_mp'];
-  // todo: set new target motor position via I2C
+  $motor_index = $_POST['motor_index'];
   $tc = $_POST['timeout_counter'];
+
+  // todo: set new target motor position via I2C
 
   // just for testing:
   if($tc > 5) {
