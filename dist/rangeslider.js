@@ -301,6 +301,7 @@
             this.max    = tryParseFloat(this.$element[0].getAttribute('max'), 100);
             this.value  = tryParseFloat(this.$element[0].value, Math.round(this.min + (this.max-this.min)/2));
             this.step   = tryParseFloat(this.$element[0].getAttribute('step'), 1);
+            this.slider_index = tryParseFloat(this.$element[0].getAttribute('slider_index'), NaN);
         }
 
         this.handleDimension    = getDimension(this.$handle[0], 'offset' + ucfirst(this.DIMENSION));

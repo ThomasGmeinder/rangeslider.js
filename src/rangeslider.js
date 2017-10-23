@@ -1,3 +1,4 @@
+/*! rangeslider.js - v2.3.1 | (c) 2017 @andreruffert | MIT license | https://github.com/andreruffert/rangeslider.js */
 (function(factory) {
     'use strict';
 
@@ -300,6 +301,7 @@
             this.max    = tryParseFloat(this.$element[0].getAttribute('max'), 100);
             this.value  = tryParseFloat(this.$element[0].value, Math.round(this.min + (this.max-this.min)/2));
             this.step   = tryParseFloat(this.$element[0].getAttribute('step'), 1);
+            this.slider_index = tryParseFloat(this.$element[0].getAttribute('slider_index'), NaN);
         }
 
         this.handleDimension    = getDimension(this.$handle[0], 'offset' + ucfirst(this.DIMENSION));
@@ -320,10 +322,6 @@
 
     Plugin.prototype.handleDown = function(e) {
         e.preventDefault();
-        
-        // Only respond to mouse main button clicks (usually the left button)
-        if (e.button && e.button !== 0) return;
-        
         this.$document.on(this.moveEvent, this.handleMove);
         this.$document.on(this.endEvent, this.handleEnd);
 
