@@ -99,7 +99,7 @@ if(isset($_POST['target_mp'])) {
   $motor_index = $_POST['motor_index'];
   if($i2c_connected) { 
     // Read current motor position
-    $cp_reg = $motor_index*3 + 2;
+    $cp_reg = $motor_index*4 + 2;
     error_log($cp_reg);
     $command = "i2c_control -r ".$cp_reg;
     exec($command, $output, $return);  

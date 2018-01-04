@@ -74,7 +74,7 @@
         <output></output>
     </div>
 
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="../dist/rangeslider.js"></script>
     <script>
 
@@ -98,30 +98,21 @@
             var output = element.parentNode.getElementsByTagName('output')[0] || element.parentNode.parentNode.getElementsByTagName('output')[0];
             output[textContent] = value + " cm";
         }
-
-        function monitor_remote_motors(slider) {
-            var mv = parseInt(slider.motor_value);
-            var current_mp;
-            var target_mp = slider.value;
-            var delay = 2000; // 2s
-            var timeout = slider.timeout;
-            var tc = slider.timeout_counter;
-            
-            console.log('monitor_remote_motors called with timeout counter '+tc+' for slider '+slider.slider_index);
+        function init_from_motor_position(slider) {
+            var si = slider.slider_index; 
+            console.log('init_from_motor_position called for slider '+slider.slider_index);
             $.ajax({
                 type: 'POST',
                 url:  'motor_position.php',
                 dataType: "json",
-                data: ({target_mp : target_mp, motor_index : slider.slider_index, timeout_counter : tc}),
+                data: ({motor_index : slider.slider_index}),
                 success: function(data) {
                     current_mp = parseInt(data.current_mp);
-                    target_mp = parseInt(data.target_mp); // It's possible that this was changed in the greenhouse with the buttons
-                    //console.log(JSON.stringify(data, null, 2));
-                    console.log("from the server: current_mp: "+current_mp+", target_mp: "+target_mp);
+                    console.log("from the server for slider "+si+": current_mp: "+current_mp);
                 },
                 error: function(exception) {
-                    alert('Exception:'+exception);
-                }
+                    alert('Exception from ajax post:'+exception);
+                },
             }).done(function() {
                 if(isNaN(current_mp)) 
                 {
@@ -129,47 +120,92 @@
                     slider.$element[0].disabled = 1; // diable
                     alert("Fehler: Motor Position unbekannt");
                 } 
-                else if(!isNaN(timeout) && tc*delay > timeout ) 
-                {
-                    // one minute timeout reached
-                    // Todo: Mark slider red  
-                    slider.$element[0].disabled = 0; // re-enable to try again
-                    slider.setValue(current_mp);
-                    slider.timeout_counter = 0; // reset
-                    alert("Fehler: Motor Position "+target_mp+" wurde nach "+timeout/1000+" Sekunden Timeout noch nicht erreicht. Slider wird auf aktuelle Motorposition "+current_mp+" zurückgesetzt");
-                    //stringOutput(slider.$element[0], "Fehler: Motor Position "+target_mp+" wurde nach "+timeout/1000+" Sekunden noch nicht erreicht");
-                }
-                else if(current_mp == target_mp) 
-                {
-                    slider.$element[0].disabled = 0; // re-enable
-                    // update current_mp. Could have been changed by the server
-                    slider.setValue(current_mp);  
-                    valueOutput(slider.$element[0]);
-                    slider.timeout = "inactive";
-                } 
                 else 
                 {
-                    slider.$element[0].disabled = 1; // disable slider
-                    var message;
-                    // Todo: Improve this condition. Change message to "Server änderte position" 
-                    // if server overrides the position set in the Browser when someone uses buttons at the 
-                    // same time. HW buttons have higher prio than Browser.
-                    if(isNaN(timeout)) {
-                        // timeout is inactive. That means motor is controlled remotely
-                        message = "Server änderte position. Motor läuft...."
-                    } else {
-                        message = "Client änderte position. Motor läuft...."
-                    }
-                    stringOutput(slider.$element[0], message);
+                    slider.$element[0].disabled = 0; 
+                    slider.setValue(current_mp);
+                    slider.init_done = 1;
+                    valueOutput(slider.$element[0]);
+                    slider.update(true, false);
+                    console.log('Initialised slider '+slider.slider_index+' to position '+current_mp);
                 }
-                slider.update(true, false);
+            });
+        }
 
+        function monitor_remote_motors(slider) {
+            var current_mp;
+            var target_mp = slider.value;
+            var delay = 2000; // 2s
+            var timeout = slider.timeout;
+            var tc = slider.timeout_counter;
+            var si = slider.slider_index; 
+
+            console.log('monitor_remote_motors called with timeout counter '+tc+' for slider '+si);
+
+            if(slider.init_done) {
+            $.ajax({
+                type: 'POST',
+                url:  'motor_position.php',
+                dataType: "json",
+                data: ({target_mp : target_mp, motor_index : si, timeout_counter : tc}),
+                success: function(data) {
+                    current_mp = parseInt(data.current_mp);
+                    target_mp = parseInt(data.target_mp); // It's possible that this was changed in the greenhouse with the buttons
+                    //console.log(JSON.stringify(data, null, 2));
+                    console.log("from the server for slider "+si+": current_mp: "+current_mp+", target_mp: "+target_mp);
+                },
+                error: function(exception) {
+                    alert('Exception from ajax post:'+exception);
+                }
+            }).done(function() {
+                  if(isNaN(current_mp)) 
+                  {
+                      // Todo: Mark slider red  
+                      slider.$element[0].disabled = 1; // diable
+                      alert("Fehler: Motor Position unbekannt");
+                  } 
+                  else if(!isNaN(timeout) && tc*delay > timeout ) 
+                  {
+                      // one minute timeout reached
+                      // Todo: Mark slider red  
+                      slider.$element[0].disabled = 0; // re-enable to try again
+                      slider.setValue(current_mp);
+                      slider.timeout_counter = 0; // reset
+                      alert("Fehler: Motor Position "+target_mp+" wurde nach "+timeout/1000+" Sekunden Timeout noch nicht erreicht. Slider wird auf aktuelle Motorposition "+current_mp+" zurückgesetzt");
+                      //stringOutput(slider.$element[0], "Fehler: Motor Position "+target_mp+" wurde nach "+timeout/1000+" Sekunden noch nicht erreicht");
+                  }
+                  else if(current_mp == target_mp) 
+                  {
+                      slider.$element[0].disabled = 0; // re-enable
+                      // update current_mp. Could have been changed by the server
+                      slider.setValue(current_mp);  
+                      valueOutput(slider.$element[0]);
+                      slider.timeout = "inactive";
+                  } 
+                  else 
+                  {
+                      slider.$element[0].disabled = 1; // disable slider
+                      var message;
+                      // Todo: Improve this condition. Change message to "Server änderte position" 
+                      // if server overrides the position set in the Browser when someone uses buttons at the 
+                      // same time. HW buttons have higher prio than Browser.
+                      if(isNaN(timeout)) {
+                          // timeout is inactive. That means motor is controlled remotely
+                          message = "Server änderte position. Motor läuft...."
+                      } else {
+                          message = "Client änderte position. Motor läuft...."
+                      }
+                      stringOutput(slider.$element[0], message);
+                  }
+                  slider.update(true, false);
                 slider.timeout_counter += 1;
 
                 // call function recursively to continuously monitor the motor position.
-                setTimeout(function(){ monitor_remote_motors(slider) }, delay);
                 
             });
+            }
+            // recursive call!
+            setTimeout(function(){ monitor_remote_motors(slider) }, delay);
 
         }
          
@@ -238,6 +274,7 @@
             onInit: function() {
               this.timeout = "inactive";
               this.timeout_counter = 0;
+              init_from_motor_position(this);
               monitor_remote_motors(this, 0); // call recursive funtion 
             },
 

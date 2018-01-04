@@ -36,6 +36,7 @@
         hasInputRangeSupport = supportsRange(),
         // Status variables to control slider state over time based on state changing on he server
         slider_index,
+        init_done=0,
         timeout="inactive",
         timout_counter=0,
         defaults = {
