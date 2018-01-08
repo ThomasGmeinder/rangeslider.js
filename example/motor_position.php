@@ -22,7 +22,7 @@ $STARTING = 1;
 $STOPPING = 2;
 
 $motor_index = $_POST['motor_index'];
-$regs_per_motor = 4;
+$regs_per_motor = 5;
 $base_reg = $motor_index * $regs_per_motor;
 
 // Todo: Read server_target_mp it overrides the target_mp from client 
@@ -69,7 +69,7 @@ if(isset($_POST['target_mp'])) {
     }
     else if($current_mp != $target_mp) {
       // set new target motor position via I2C
-      // Todo: only do this once
+      // Todo: only do this once. i.e. only if motor state is STOPPED
       $command = "i2c_control -w ".$tp_reg." ".$target_mp;
       system($command);
   
@@ -83,7 +83,6 @@ if(isset($_POST['target_mp'])) {
       $command = "i2c_control -w ".$state_reg." ".$ctrl_val;
       system($command);
     } 
-
 
   } else {
     // just for testing:
