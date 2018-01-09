@@ -157,71 +157,70 @@
                     target_mp = parseInt(data.target_mp); // It's possible that this was changed in the greenhouse with the buttons
                     actuator = data.actuator;
                      //console.log(JSON.stringify(data, null, 2));
-                    console.log("from the server for slider "+si+": current_mp: "+current_mp+", target_mp: "+target_mp);
+                    console.log("from the server for slider "+si+": current_mp: "+current_mp+", target_mp: "+target_mp+", actuator: "+actuator);
                 },
                 error: function(exception) {
                     alert('Exception from ajax post:'+exception);
                 }
             }).done(function() {
-                  if(slider.user_moved_slider) {
-                      // clear flag
-                      slider.user_moved_slider = 0;
-                      // keep state
-                      slider.is_motor_actuator = 1;
-                  } 
-                  // process the changes from the server
-                  if(isNaN(current_mp)) 
-                  {
-                      // Todo: Mark slider red  
-                      slider.$element[0].disabled = 1; // diable
-                      alert("Fehler: Motor Position unbekannt");
-                  } 
-                  else if(!isNaN(timeout) && tc*delay > timeout ) 
-                  {
-                      // one minute timeout reached
-                      // Todo: Mark slider red  
-                      slider.$element[0].disabled = 0; // re-enable to try again
-                      slider.setValue(current_mp);
-                      slider.timeout_counter = 0; // reset
-                      alert("Fehler: Motor Position "+target_mp+" wurde nach "+timeout/1000+" Sekunden Timeout noch nicht erreicht. Slider wird auf aktuelle Motorposition "+current_mp+" zurückgesetzt");
-                      //stringOutput(slider.$element[0], "Fehler: Motor Position "+target_mp+" wurde nach "+timeout/1000+" Sekunden noch nicht erreicht");
-                  }
-                  else if(current_mp == target_mp) 
-                  {
-                      // Target position reached !
-                      slider.$element[0].disabled = 0; // re-enable
-                      // update current_mp. Could have been changed by the server
-                      slider.setValue(current_mp);  
-                      valueOutput(slider.$element[0]);
-                      slider.timeout = "inactive";
+                if(slider.user_moved_slider) {
+                    // clear flag
+                    slider.user_moved_slider = 0;
+                    // keep state
+                    slider.is_motor_actuator = 1;
+                } 
+                // process the changes from the server
+                if(isNaN(current_mp)) 
+                {
+                    // Todo: Mark slider red  
+                    slider.$element[0].disabled = 1; // diable
+                    alert("Fehler: Motor Position unbekannt");
+                } 
+                else if(!isNaN(timeout) && tc*delay > timeout ) 
+                {
+                    // one minute timeout reached
+                    // Todo: Mark slider red  
+                    slider.$element[0].disabled = 0; // re-enable to try again
+                    slider.setValue(current_mp);
+                    slider.timeout_counter = 0; // reset
+                    alert("Fehler: Motor Position "+target_mp+" wurde nach "+timeout/1000+" Sekunden Timeout noch nicht erreicht. Slider wird auf aktuelle Motorposition "+current_mp+" zurückgesetzt");
+                    //stringOutput(slider.$element[0], "Fehler: Motor Position "+target_mp+" wurde nach "+timeout/1000+" Sekunden noch nicht erreicht");
+                }
+                else if(current_mp == target_mp) 
+                {
+                    // Target position reached !
+                    slider.$element[0].disabled = 0; // re-enable
+                    // update current_mp. Could have been changed by the server
+                    slider.setValue(current_mp);  
+                    valueOutput(slider.$element[0]);
+                    slider.timeout = "inactive";
+                    slider.is_motor_actuator = 0;
+                } 
+                else if(actuator != "NONE") 
+                {
+                    slider.$element[0].disabled = 1; // disable slider
+                    var message;
+                    if(actuator == "BUTTON") {
+                      // BUTTON actuator overrides client actuator
                       slider.is_motor_actuator = 0;
-                  } 
-                  else if(actuator != "NONE") 
-                  {
-                      slider.$element[0].disabled = 1; // disable slider
-                      var message;
-                      if(actuator == "BUTTON") {
-                        // BUTTON actuator overrides client actuator
-                        slider.is_motor_actuator = 0;
-                      }
+                    }
 
-                      if(slider.is_motor_actuator) {
-                         message = "Dieser Client änderte position. Motor läuft...."
-                      } else {
-                         message = "Ein anderer Aktuator änderte position via "+actuator+". Motor läuft...."
-                      }; 
-                      // Update target mp to the value set by the other actuator
-                      slider.setValue(target_mp);  
-                      stringOutput(slider.$element[0], message);
-                  }
-                  slider.update(true, false);
+                    if(slider.is_motor_actuator) {
+                       message = "Dieser Client änderte position. Motor läuft...."
+                    } else {
+                       message = "Ein anderer Aktuator änderte position via "+actuator+". Motor läuft...."
+                    }; 
+                    // Update target mp to the value set by the other actuator
+                    slider.setValue(target_mp);  
+                    stringOutput(slider.$element[0], message);
+                }
+
+                slider.update(true, false);
                 slider.timeout_counter += 1;
-
-                // call function recursively to continuously monitor the motor position.
                 
-            });
+              });
             }
-            // recursive call!
+            // call function recursively to continuously monitor the motor position.
             setTimeout(function(){ monitor_remote_motors(slider) }, delay);
 
         }

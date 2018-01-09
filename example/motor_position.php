@@ -53,7 +53,7 @@ $base_reg = $motor_index * $regs_per_motor;
 $actuator = "NONE";
 $event_this_client_started_motor = 0; // 0 is invalid
 
-$verbose = 1;
+$verbose = 0;
 
 function print_log($message) {
  global $verbose; // acess global
@@ -97,15 +97,6 @@ if(isset($_POST['target_mp'])) {
     $motor_state = read_i2c_reg($state_reg);
     print_log("State of Motor ".$motor_index." read via I2C is ".$motor_state);
 
-    // Determine who is the actuator 
-    $actuator_reg = $base_reg + 3;
-    $actuator_val = read_i2c_reg($actuator_reg);
-    // lower 4 bits are current actuator, upper 4 bits are previous actuator
-    if(($actuator_val & 0xf) == 0) $actuator = "I2C";      
-    else if(($actuator_val & 0xf) == 1) $actuator = "BUTTON";
-
-    if((($actuator_val >> 4) & 0xf) == 0) $prev_actuator = "I2C";      
-    else if((($actuator_val >> 4) & 0xf) == 1) $prev_actuator = "BUTTON";
     
     if($current_mp != $target_mp) { 
       // This can happen for two reasons
@@ -172,10 +163,12 @@ if(isset($_POST['target_mp'])) {
    }
 }
 
-// Todo: get current_mp from I2C
-if($current_mp == -128) {
-  $current_mp = "Invalid";
-}	
+// Determine who is the actuator 
+// It's important to do this after the I2C write above 
+$actuator_reg = $base_reg + 3;
+$actuator_val = read_i2c_reg($actuator_reg);
+if($actuator_val == 0) $actuator = "I2C";      
+else if($actuator_val == 1) $actuator = "BUTTON";
 
 // Update client by printing data as json object.
 echo json_encode(
