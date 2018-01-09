@@ -139,7 +139,7 @@
             var timeout = slider.timeout;
             var tc = slider.timeout_counter;
             var si = slider.slider_index; 
-
+            var actuator = "NONE";
             console.log('monitor_remote_motors called with timeout counter '+tc+' for slider '+si);
 
             if(slider.init_done) {
@@ -147,17 +147,29 @@
                 type: 'POST',
                 url:  'motor_position.php',
                 dataType: "json",
-                data: ({target_mp : target_mp, motor_index : si, timeout_counter : tc}),
+                data: ({target_mp : target_mp,
+                        motor_index : si,
+                        timeout_counter : tc,
+                        user_moved_slider : slider.user_moved_slider,
+                }),
                 success: function(data) {
                     current_mp = parseInt(data.current_mp);
                     target_mp = parseInt(data.target_mp); // It's possible that this was changed in the greenhouse with the buttons
-                    //console.log(JSON.stringify(data, null, 2));
+                    actuator = data.actuator;
+                     //console.log(JSON.stringify(data, null, 2));
                     console.log("from the server for slider "+si+": current_mp: "+current_mp+", target_mp: "+target_mp);
                 },
                 error: function(exception) {
                     alert('Exception from ajax post:'+exception);
                 }
             }).done(function() {
+                  if(slider.user_moved_slider) {
+                      // clear flag
+                      slider.user_moved_slider = 0;
+                      // keep state
+                      slider.is_motor_actuator = 1;
+                  } 
+                  // process the changes from the server
                   if(isNaN(current_mp)) 
                   {
                       // Todo: Mark slider red  
@@ -176,25 +188,30 @@
                   }
                   else if(current_mp == target_mp) 
                   {
+                      // Target position reached !
                       slider.$element[0].disabled = 0; // re-enable
                       // update current_mp. Could have been changed by the server
                       slider.setValue(current_mp);  
                       valueOutput(slider.$element[0]);
                       slider.timeout = "inactive";
+                      slider.is_motor_actuator = 0;
                   } 
-                  else 
+                  else if(actuator != "NONE") 
                   {
                       slider.$element[0].disabled = 1; // disable slider
                       var message;
-                      // Todo: Improve this condition. Change message to "Server änderte position" 
-                      // if server overrides the position set in the Browser when someone uses buttons at the 
-                      // same time. HW buttons have higher prio than Browser.
-                      if(isNaN(timeout)) {
-                          // timeout is inactive. That means motor is controlled remotely
-                          message = "Server änderte position. Motor läuft...."
-                      } else {
-                          message = "Client änderte position. Motor läuft...."
+                      if(actuator == "BUTTON") {
+                        // BUTTON actuator overrides client actuator
+                        slider.is_motor_actuator = 0;
                       }
+
+                      if(slider.is_motor_actuator) {
+                         message = "Dieser Client änderte position. Motor läuft...."
+                      } else {
+                         message = "Ein anderer Aktuator änderte position via "+actuator+". Motor läuft...."
+                      }; 
+                      // Update target mp to the value set by the other actuator
+                      slider.setValue(target_mp);  
                       stringOutput(slider.$element[0], message);
                   }
                   slider.update(true, false);
@@ -291,8 +308,9 @@
                 this.timeout = 60000;
                 this.timeout_counter = 0;
                 this.$element[0].disabled = 1; // disable
+                this.user_moved_slider = 1;
                 this.update(true, false);
-                stringOutput(this.$element[0], "Client änderte position. Motor läuft....");
+                //stringOutput(this.$element[0], "Client änderte position. Motor läuft....");
                 console.log('onSlideEnd');
                 console.log('position: ' + position, 'value: ' + value);
             }
