@@ -36,11 +36,11 @@
         hasInputRangeSupport = supportsRange(),
         // Status variables to control slider state over time based on state changing on he server
         slider_index,
-        user_moved_slider=0,
-        init_done=0,
+        slider_was_moved=0,
         is_motor_actuator=0,
+        init_done=0,
         timeout="inactive",
-        timout_counter=0,
+        timeout_counter=0,
         defaults = {
             polyfill: true,
             orientation: 'horizontal',

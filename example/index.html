@@ -131,6 +131,9 @@
                 }
             });
         }
+        function request_server(slider, motor_position_change_request) {
+
+        };
 
         function monitor_remote_motors(slider) {
             var current_mp;
@@ -142,16 +145,19 @@
             var actuator = "NONE";
             console.log('monitor_remote_motors called with timeout counter '+tc+' for slider '+si);
 
+            var slider_was_moved_saved = slider.slider_was_moved;
+
             if(slider.init_done) {
             $.ajax({
-                type: 'POST',
+                type: 'post',
                 url:  'motor_position.php',
-                dataType: "json",
-                data: ({target_mp : target_mp,
-                        motor_index : si,
-                        timeout_counter : tc,
-                        user_moved_slider : slider.user_moved_slider,
-                }),
+                dataType: 'json',
+                data: {'target_mp' : target_mp,
+                        'motor_index' : si,
+                        'timeout_counter' : tc,
+                        'client_motor_start_request' :  slider.slider_was_moved,
+                        'dummy' : 1
+                },
                 success: function(data) {
                     current_mp = parseInt(data.current_mp);
                     target_mp = parseInt(data.target_mp); // It's possible that this was changed in the greenhouse with the buttons
@@ -163,12 +169,15 @@
                     alert('Exception from ajax post:'+exception);
                 }
             }).done(function() {
-                if(slider.user_moved_slider) {
-                    // clear flag
-                    slider.user_moved_slider = 0;
-                    // keep state
-                    slider.is_motor_actuator = 1;
-                } 
+                if(slider.slider_was_moved && slider_was_moved_saved) {
+                   // clear flag
+                   slider.slider_was_moved = 0;
+                   // keep state
+                   slider.is_motor_actuator = 1;
+                } else if (slider.slider_was_moved) {
+                   console.log("Detected and handled race condition on slider_was_moved for slider "+slider.slider_index);
+                   return; // return from done. Next call of monitor_remote_motors will handle slider_was_moved
+                }
                 // process the changes from the server
                 if(isNaN(current_mp)) 
                 {
@@ -288,30 +297,31 @@
 
             // Callback function
             onInit: function() {
+              console.log('onInit event for slider '+this.slider_index);
+              // Must init all state variables here!
               this.timeout = "inactive";
               this.timeout_counter = 0;
+              this.slider_was_moved = 0;
               init_from_motor_position(this);
-              monitor_remote_motors(this, 0); // call recursive funtion 
+              monitor_remote_motors(this); // call recursive funtion 
             },
 
             // Callback function
             onSlide: function(position, value) {
                 valueOutput(this.$element[0]);
-                console.log('onSlide');
-                console.log('position: ' + position, 'value: ' + value);
+                console.log('onSlide event for slider '+this.slider_index+': position: ' + position, 'value: ' + value);
             },
 
             // Callback function
             onSlideEnd: function(position, value) {
                 //refreshSlider(this, 0);
+                this.slider_was_moved = 1;
                 this.timeout = 60000;
                 this.timeout_counter = 0;
                 this.$element[0].disabled = 1; // disable
-                this.user_moved_slider = 1;
                 this.update(true, false);
                 //stringOutput(this.$element[0], "Client änderte position. Motor läuft....");
-                console.log('onSlideEnd');
-                console.log('position: ' + position, 'value: ' + value);
+                console.log('onSlideEnd event for slider '+this.slider_index+': position: ' + position, 'value: ' + value);
             }
         });
 

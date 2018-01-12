@@ -5,12 +5,6 @@
 // php -S localhost:8000
 // Enter URL: http://localhost:8000/example
 
-// Possible system states when this script is called:
-// - Motor stopped by button after it was started by I2C.
-// - Motor stopped by button after it was started by Button.
-// - Motor running from this actuator (this_client_started_motor)  
-// - Motor running from another actuator (!this_client_started_motor)
-
 // Options to make $target_mp != $current_mp 
 // - This client changed target_mp 
 // - Another actuator changed current_mp.
@@ -18,19 +12,6 @@
 
 // Events that need to be detected and handled by this script
 // - This client changed target_mp when motor was stopped -> Start Motor with I2C write
-
-// Possible actuators:
-// target_mp chagend. Motor startUser changes slider on browser client
-// 
-
-// Todo: 
-// Implement something to distinguish between system states 1 and 2. And make sure that multiple clients are supported!
-// Comprehensive error checking and reporting to the client by way or AJAX return array 
-// If new motor position set by Browser was not reached after expected X, 
-// this logic has to determine of two possible reasons:
-// - A: Motor problem
-// - B: HW buttons changed motor position before the position set by browser could be reached.
-// The motor is currently moving to target_mp due to browser event or Button event on the server
 
 
 // Goal: minimise the logic here. Keep it a thin layer that passes Information between Motor Controller and Client
@@ -77,7 +58,8 @@ function read_i2c_reg($reg_idx) {
 if(isset($_POST['target_mp'])) {
   $target_mp = $_POST['target_mp'];
   $tc = $_POST['timeout_counter'];
-  $client_motor_start_request = $_POST['user_moved_slider'];
+
+  $client_motor_start_request = $_POST['client_motor_start_request'];
 
   print_log("motor_position.php called with new target position ".$target_mp." for Motor ".$motor_index);
 
