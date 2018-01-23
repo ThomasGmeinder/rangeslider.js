@@ -114,15 +114,16 @@
                     alert('Exception from ajax post:'+exception);
                 },
             }).done(function() {
+                // disable slider
+                slider.$element[0].disabled = 1; // diable
+
                 if(isNaN(current_mp)) 
                 {
                     // Todo: Mark slider red  
-                    slider.$element[0].disabled = 1; // diable
                     alert("Fehler: Motor Position unbekannt");
                 } 
                 else 
                 {
-                    slider.$element[0].disabled = 0; 
                     slider.setValue(current_mp);
                     slider.init_done = 1;
                     valueOutput(slider.$element[0]);
@@ -131,9 +132,6 @@
                 }
             });
         }
-        function request_server(slider, motor_position_change_request) {
-
-        };
 
         function monitor_remote_motors(slider) {
             var current_mp;
@@ -146,7 +144,7 @@
             console.log('monitor_remote_motors called with timeout counter '+tc+' for slider '+si);
 
             var slider_was_moved_saved = slider.slider_was_moved;
-
+            var errors = []; // init empty
             if(slider.init_done) {
             $.ajax({
                 type: 'post',
@@ -162,8 +160,10 @@
                     current_mp = parseInt(data.current_mp);
                     target_mp = parseInt(data.target_mp); // It's possible that this was changed in the greenhouse with the buttons
                     actuator = data.actuator;
-                     //console.log(JSON.stringify(data, null, 2));
                     console.log("from the server for slider "+si+": current_mp: "+current_mp+", target_mp: "+target_mp+", actuator: "+actuator);
+             
+                    errors = data.errors;
+                    console.log(JSON.stringify(data.errors, null, 2));
                 },
                 error: function(exception) {
                     alert('Exception from ajax post:'+exception);
@@ -178,8 +178,22 @@
                    console.log("Detected and handled race condition on slider_was_moved for slider "+slider.slider_index);
                    return; // return from done. Next call of monitor_remote_motors will handle slider_was_moved
                 }
+                // process errors
+                if(errors.length > 0) {
+                   slider.$element[0].disabled = 1; // diable
+                  
+                   var message = "Fehler:\n"; 
+//                   var message = "Errors detected for motor "+slider.slider_index+":\n";
+                   for(var i in errors) {
+                     //console.log(errors[i]);
+                     //message = message + errors[i].error + "\n"; 
+                   };
+                   message = message + JSON.stringify(errors);
+                   stringOutput(slider.$element[0], message);
+                   //alert(message);
+                }
                 // process the changes from the server
-                if(isNaN(current_mp)) 
+                else if(isNaN(current_mp)) 
                 {
                     // Todo: Mark slider red  
                     slider.$element[0].disabled = 1; // diable

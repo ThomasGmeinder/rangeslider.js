@@ -28,13 +28,15 @@ $STARTING = 1;
 $STOPPING = 2;
 
 $motor_index = $_POST['motor_index'];
-$regs_per_motor = 5;
+$regs_per_motor = 6;
 $base_reg = $motor_index * $regs_per_motor;
 
 $actuator = "NONE";
 $event_this_client_started_motor = 0; // 0 is invalid
 
-$verbose = 0;
+$error_data = array(); 
+
+$verbose = 1;
 
 function print_log($message) {
  global $verbose; // acess global
@@ -113,6 +115,20 @@ if(isset($_POST['target_mp'])) {
         $target_mp = $server_target_mp;
       }
     } 
+
+    // extract errors from DB
+    $db = mysql_connect("localhost","datalogger","datalogger") or die("DB Connect error"); 
+    mysql_select_db("datalogger"); 
+    $q=   "SELECT * from errors "; 
+    $q=$q."WHERE ventilation_idx = $motor_index AND cleared = 0 "; 
+    $q=$q."ORDER BY date_time DESC "; 
+    $ds=mysql_query($q);  
+    error_log($q);
+    while($r = mysql_fetch_object($ds)) 
+    { 
+      $error_data[] = $r; // add another row
+    }
+   
   } else {
     // just for testing:
     if($tc > 5) {
@@ -158,6 +174,7 @@ echo json_encode(
     "target_mp" => $target_mp, 
     "current_mp" => $current_mp, 
     "actuator" => $actuator,
+    "errors" => $error_data
   )
 );
 
